@@ -2,128 +2,1161 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>知识库语义检索</title>
-<meta name="description" content="上传文档建立知识库，用自然语言语义检索条目">
-<link rel="stylesheet" href="style.css?v=20261024d">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VOC→CTQ 智能转化工作台 v1.0</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#f4f6f9;--card:#fff;--line:#e3e8ef;--line2:#eef1f6;
+  --text:#1c2431;--sub:#667085;--mute:#98a2b3;
+  --pri:#1d4ed8;--pri-l:#eef4ff;--pri-b:#c7d7fe;
+  --ok:#0f9d58;--ok-l:#eaf7ef;--warn:#d97706;--warn-l:#fef6e7;--err:#dc2626;--err-l:#fdeeee;
+}
+html,body{margin:0;padding:0}
+body{font:13.5px/1.65 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:13px}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);padding:10px 16px}
+.hd-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hd-title{font-size:16px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.hd-title small{font-weight:400;color:var(--mute);font-size:11.5px;margin-left:8px;letter-spacing:0}
+.navchips{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.navchip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 11px;font-size:12px;color:var(--sub);display:flex;align-items:center;gap:5px;transition:.15s}
+.navchip:hover{border-color:var(--pri-b);color:var(--pri);background:var(--pri-l)}
+.navchip b{font-weight:700;color:var(--pri);font-size:11px}
+
+/* ---------- layout ---------- */
+main{display:grid;grid-template-columns:352px 300px minmax(0,1fr);gap:14px;padding:14px;align-items:start}
+@media(max-width:1400px){main{grid-template-columns:330px minmax(0,1fr)}.col-mid{grid-column:1/-1;order:3}}
+@media(max-width:980px){main{grid-template-columns:1fr}.col-mid,.col-right{grid-column:1/-1}}
+.col-left,.col-mid,.col-right{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(16,24,40,.04);overflow:hidden}
+.card-hd{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line2);background:#fcfdff}
+.code-badge{width:22px;height:22px;border-radius:6px;background:var(--pri);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.card-hd h3{margin:0;font-size:13px;font-weight:700}
+.card-hd .hint{font-size:11px;color:var(--mute);margin-left:auto;font-weight:400}
+.card-bd{padding:12px}
+
+label.f{display:block;font-size:11.5px;color:var(--sub);margin:0 0 4px;font-weight:600}
+textarea{width:100%;min-height:180px;border:1px solid var(--line);border-radius:8px;padding:9px 10px;resize:vertical;line-height:1.7;background:#fcfdff;outline:none;transition:.15s}
+textarea:focus{border-color:var(--pri-b);background:#fff;box-shadow:0 0 0 3px rgba(29,78,216,.06)}
+input[type=text],input[type=password],select{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff;outline:none}
+input:focus,select:focus{border-color:var(--pri-b);box-shadow:0 0 0 3px rgba(29,78,216,.06)}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.mt8{margin-top:8px}.mt12{margin-top:12px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;font-size:12.5px;color:var(--text);transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--pri-b);color:var(--pri);background:var(--pri-l)}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+.btn.pri:hover{background:#1a44c2;color:#fff}
+.btn.sm{padding:4px 9px;font-size:11.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 11px;font-size:12px;color:var(--sub)}
+.seg button.on{background:var(--pri);color:#fff;font-weight:600}
+.switch{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);cursor:pointer;user-select:none}
+.track{width:34px;height:19px;border-radius:12px;background:#d0d5dd;position:relative;transition:.18s}
+.track::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch.on .track{background:var(--pri)}
+.switch.on .track::after{left:17px}
+
+/* ---------- process ---------- */
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:10px;padding:8px 0;position:relative}
+.step:not(:last-child)::before{content:"";position:absolute;left:11px;top:30px;bottom:-2px;width:2px;background:var(--line2)}
+.step.done::before{background:var(--ok-l)}
+.step .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:11px;font-weight:700;color:var(--mute);display:flex;align-items:center;justify-content:center;flex:0 0 auto;z-index:1}
+.step.run .dot{border-color:var(--pri);color:var(--pri);background:var(--pri-l);animation:pulse 1.2s infinite}
+.step.done .dot{border-color:var(--ok);background:var(--ok);color:#fff}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(29,78,216,.35)}50%{box-shadow:0 0 0 6px rgba(29,78,216,0)}}
+.step .st{min-width:0;flex:1}
+.step .st .nm{font-size:12.5px;font-weight:600}
+.step .st .ds{font-size:11px;color:var(--mute);margin-top:1px}
+.bar{height:5px;background:var(--line2);border-radius:3px;overflow:hidden;margin:10px 0 4px}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3b82f6,#1d4ed8);transition:width .35s}
+.log{height:190px;overflow:auto;background:#fbfcfe;border:1px solid var(--line2);border-radius:8px;padding:8px;font:11.5px/1.7 Consolas,Menlo,monospace;color:#475467}
+.log .l{display:flex;gap:6px}
+.log .t{color:var(--mute);flex:0 0 auto}
+.log .ok{color:var(--ok)}.log .wn{color:var(--warn)}.log .er{color:var(--err)}
+.alert{border:1px solid var(--warn);background:var(--warn-l);border-radius:8px;padding:8px 10px;font-size:11.5px;color:#92400e;margin-top:8px;display:none}
+.alert.show{display:block}
+
+/* ---------- output ---------- */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);background:#fcfdff;padding:0 8px;overflow-x:auto}
+.tab{border:0;background:transparent;padding:9px 12px;font-size:12.5px;color:var(--sub);border-bottom:2px solid transparent;white-space:nowrap;font-weight:600}
+.tab.on{color:var(--pri);border-bottom-color:var(--pri);background:#fff}
+.tab .cnt{font-size:10.5px;background:var(--line2);color:var(--sub);border-radius:9px;padding:0 6px;margin-left:5px;font-weight:700}
+.tab.on .cnt{background:var(--pri-l);color:var(--pri)}
+.panes{padding:0}
+.pane{display:none;max-height:calc(100vh - 200px);overflow:auto}
+.pane.on{display:block}
+.empty{padding:56px 20px;text-align:center;color:var(--mute);font-size:12.5px}
+.empty .ic{font-size:30px;opacity:.35;margin-bottom:8px}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f8fafc;color:#475467;font-weight:700;text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:8px 9px;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.6}
+tbody tr:hover{background:#fcfdff}
+.tag{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.t-yes{background:var(--err-l);color:var(--err)}
+.t-no{background:#f2f4f7;color:var(--sub)}
+.t-hi{background:#fdeeee;color:var(--err)}
+.t-mid{background:var(--warn-l);color:var(--warn)}
+.t-lo{background:#f2f4f7;color:var(--sub)}
+.t-p{background:var(--pri-l);color:var(--pri)}
+.t-g{background:var(--ok-l);color:var(--ok)}
+.t-o{background:#f2f4f7;color:#475467}
+.sec-t{padding:12px 14px 6px;font-size:12.5px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px}
+.sec-t::before{content:"";width:3px;height:13px;background:var(--pri);border-radius:2px}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 14px 12px}
+.chain .nd{background:var(--pri-l);border:1px solid var(--pri-b);color:#1e3a8a;border-radius:7px;padding:5px 9px;font-size:11.5px;font-weight:600}
+.chain .ar{color:var(--mute);font-size:12px}
+.mece{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
+.mece .m{font-size:11.5px;border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:#fcfdff;color:#475467}
+.mece .m b{color:var(--ok);margin-right:4px}
+pre.doc{margin:0;padding:16px 18px;font:12px/1.75 Consolas,Menlo,"Microsoft YaHei",monospace;white-space:pre-wrap;word-break:break-word;color:#1c2431;background:#fff}
+.ph{padding:40px;text-align:center;color:var(--mute)}
+.badge-n{font-size:11px;color:var(--mute);padding:10px 14px;border-bottom:1px solid var(--line2);background:#fcfdff}
+
+/* ---------- export bar ---------- */
+.exportbar{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:9px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;z-index:40}
+.exportbar .lbl{font-size:11.5px;color:var(--mute);font-weight:600;letter-spacing:.3px}
+.exportbar .sp{margin-left:auto;font-size:11px;color:var(--mute)}
+.chk{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sub);cursor:pointer}
+.toast{position:fixed;right:18px;bottom:70px;background:#1c2431;color:#fff;font-size:12.5px;padding:9px 15px;border-radius:8px;opacity:0;transform:translateY(8px);transition:.25s;z-index:99;pointer-events:none;max-width:340px}
+.toast.show{opacity:1;transform:none}
+
+</style>
 </head>
 <body>
 
-<div id="boot">
-  <div class="spinner"></div>
-  <div class="boot-text">正在初始化…</div>
-</div>
-
-<!-- 登录 -->
-<div id="login" class="hidden">
-  <div class="login-card">
-    <div class="login-mark">KB</div>
-    <h1>知识库语义检索</h1>
-    <p class="login-sub">上传文档建立自己的知识库，用自然语言找相关条目</p>
-
-    <div class="field">
-      <label for="email">邮箱</label>
-      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
-    </div>
-    <button class="btn btn-primary btn-block" id="btnSend" type="button">发送验证码</button>
-
-    <div class="field hidden" id="codeField" style="margin-top:14px">
-      <label for="code">验证码</label>
-      <div class="code-row">
-        <input id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="邮箱收到的验证码" maxlength="8">
-        <button class="btn btn-primary" id="btnVerify" type="button">登录</button>
-      </div>
-    </div>
-
-    <div class="msg" id="loginMsg"></div>
+<header>
+  <div class="hd-row">
+    <div class="hd-title">VOC→CTQ 智能转化工作台<small>Step0 拆分 · Step1 要素 · Step2 因子 · Step3 定标 · Step4 CTQ</small></div>
+    <nav class="navchips">
+      <button class="navchip" data-go="c-input"><b>01</b>输入区</button>
+      <button class="navchip" data-go="c-cfg"><b>02</b>配置区</button>
+      <button class="navchip" data-go="c-proc"><b>03</b>处理区</button>
+      <button class="navchip" data-go="c-out"><b>04</b>输出区</button>
+      <button class="navchip" data-go="c-exp"><b>05</b>导出区</button>
+    </nav>
   </div>
-</div>
+</header>
 
-<!-- 主界面 -->
-<div id="main" class="hidden">
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">KB</div>
-      <span>知识库语义检索</span>
-      <span class="brand-sub">语义解析 · 多路召回 · 精排</span>
-    </div>
-    <div class="topbar-spacer"></div>
-    <div class="pill" id="modelPill" title="语义模型状态">
-      <span class="dot" id="modelDot"></span><span id="modelText">模型未加载</span>
-    </div>
-    <div class="user-chip">
-      <div class="avatar" id="avatar">·</div>
-      <span id="userName">-</span>
-      <button class="btn btn-ghost btn-sm" id="btnLogout" type="button">退出</button>
-    </div>
-  </div>
-
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="side-head">
-        <span class="side-title">文档库</span>
-        <span class="side-count" id="docCount">0 篇</span>
-      </div>
-
-      <div class="uploader">
-        <div class="dropzone" id="dropzone">
-          <div class="dropzone-title">拖入文件，或点击选择</div>
-          <div class="dropzone-hint">
-            PDF · Word · Excel · PPT · TXT · MD · CSV<br>
-            上传后自动切片并向量化入库
+<main>
+  <!-- ============ 左列 ============ -->
+  <div class="col-left">
+    <!-- 01 输入区 -->
+    <section class="card" id="c-input">
+      <div class="card-hd"><span class="code-badge">01</span><h3>输入区</h3><span class="hint">支持单条 / 批量</span></div>
+      <div class="card-bd">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px">
+          <div class="seg" id="modeSeg">
+            <button data-mode="single" class="on">单条 VOC</button>
+            <button data-mode="batch">批量（每行一条）</button>
           </div>
+          <button class="btn sm" id="btnSample">载入示例</button>
         </div>
-        <input type="file" id="fileInput" multiple class="hidden"
-               accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.pptx,.txt,.md,.markdown,.json,.html,.htm,.log,.xml,.yaml,.yml">
-      </div>
-
-      <div class="joblist" id="jobList"></div>
-
-      <div class="doclist" id="docList">
-        <div class="empty-hint">还没有文档<br>上传第一篇即建立索引</div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="search-box">
-        <input id="query" type="search" placeholder="用一句话描述你要找的内容，例如：继电器粘连的失效分析结论" autocomplete="off">
-        <button class="mode-pill on" id="btnDeep" type="button">深度语义</button>
-        <button class="btn btn-primary" id="btnSearch" type="button">检索</button>
-      </div>
-
-      <div class="sem-panel hidden" id="semPanel"></div>
-
-      <div class="search-meta">
-        <div class="search-hint" id="searchHint">输入问题，返回语义最接近的原文片段</div>
-        <div class="search-hint" id="searchStat"></div>
-      </div>
-
-      <div class="results" id="results">
-        <div class="rnone">
-          语义检索会把你的问题拆成多条不同说法，<br>
-          分别转成向量在全部文档片段中匹配，再由模型判断哪些真正回答了问题 —— 不必和原文用同一个词。
+        <label class="f">原始 VOC 文本 · 支持完整长文本与复合句式直接粘贴</label>
+        <textarea id="vocInput" placeholder="例：我需要一个三折叠手机，展开后自动打开 Windows 11 系统可以作为便携式办公电脑，折叠后自动切换为鸿蒙系统，整体厚度不能超过 10mm……"></textarea>
+        <div class="row mt8" style="justify-content:space-between">
+          <span style="font-size:11px;color:var(--mute)" id="charCnt">0 字</span>
+          <button class="btn sm" id="btnClear">清空</button>
         </div>
       </div>
-    </main>
+    </section>
+
+    <!-- 02 配置区 -->
+    <section class="card" id="c-cfg">
+      <div class="card-hd"><span class="code-badge">02</span><h3>配置区</h3><span class="hint">影响目标值与责任分工</span></div>
+      <div class="card-bd">
+        <label class="f">行业基准模型</label>
+        <select id="cfgIndustry">
+          <option value="consumer">消费电子（3C / 手机 / 穿戴）</option>
+          <option value="auto">汽车电子（车规 / 零部件）</option>
+          <option value="industrial">工业设备（重工 / 装备）</option>
+          <option value="energy">新能源（电池 / 储能 / 充换电）</option>
+          <option value="medical">医疗器械（注册制）</option>
+          <option value="software">软件服务（APP / SaaS）</option>
+        </select>
+
+        <label class="f mt12">量化强度 <span id="intenTxt" style="color:var(--pri);font-weight:700">标准</span></label>
+        <input type="range" id="cfgIntensity" min="0" max="2" step="1" value="1" style="width:100%">
+        <div class="row" style="justify-content:space-between;font-size:10.5px;color:var(--mute);margin-top:-2px">
+          <span>宽松</span><span>标准</span><span>严格</span>
+        </div>
+
+        <div class="row mt12" style="justify-content:space-between">
+          <span class="switch on" id="swMece"><span class="track"></span>启用 MECE 六维自检</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--mute);margin-top:3px">开启后强制按 人/机/料/法/环/测时 补齐要素，拒绝漏项</div>
+
+        <div class="row mt12" style="justify-content:space-between">
+          <span class="switch" id="swLlm"><span class="track"></span>接入大模型增强</span>
+        </div>
+        <div id="llmBox" style="display:none;margin-top:8px">
+          <label class="f">API Base（OpenAI 兼容）</label>
+          <input type="text" id="cfgBase" placeholder="https://api.deepseek.com/v1">
+          <label class="f mt8">Model</label>
+          <input type="text" id="cfgModel" placeholder="deepseek-chat">
+          <label class="f mt8">API Key（仅存本机浏览器）</label>
+          <input type="password" id="cfgKey" placeholder="sk-...">
+          <div style="font-size:10.5px;color:var(--mute);margin-top:6px">关闭时使用内置规则引擎，开箱即用；开启后语义质量显著提升</div>
+        </div>
+
+        <button class="btn pri mt12" id="btnRun" style="width:100%;padding:10px">▶ 开始五步转化</button>
+      </div>
+    </section>
   </div>
+
+  <!-- ============ 中列 03 处理区 ============ -->
+  <div class="col-mid">
+    <section class="card" id="c-proc">
+      <div class="card-hd"><span class="code-badge">03</span><h3>处理区</h3><span class="hint" id="engineTag">规则引擎</span></div>
+      <div class="card-bd">
+        <div class="steps" id="steps">
+          <div class="step" data-s="0"><div class="dot">1</div><div class="st"><div class="nm">复合判定与拆分</div><div class="ds">连接词 + 语义结构扫描</div></div></div>
+          <div class="step" data-s="1"><div class="dot">2</div><div class="st"><div class="nm">要素因子分解</div><div class="ds">链路图 + MECE 六维</div></div></div>
+          <div class="step" data-s="2"><div class="dot">3</div><div class="st"><div class="nm">关键因子提取</div><div class="ds">可测变量 + 取值范围</div></div></div>
+          <div class="step" data-s="3"><div class="dot">4</div><div class="st"><div class="nm">量化定标</div><div class="ds">挑战 / 达标 / 底线</div></div></div>
+          <div class="step" data-s="4"><div class="dot">5</div><div class="st"><div class="nm">CTQ 生成</div><div class="ds">合同书条目输出</div></div></div>
+        </div>
+        <div class="bar"><i id="progBar"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mute)"><span id="progTxt">待启动</span><span id="progPct">0%</span></div>
+        <div class="log mt12" id="log"><div class="l"><span class="t">--:--:--</span><span>引擎就绪，等待输入…</span></div></div>
+        <div class="alert" id="alertBox"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ 右列 04 输出区 ============ -->
+  <div class="col-right">
+    <section class="card" id="c-out">
+      <div class="card-hd"><span class="code-badge">04</span><h3>输出区</h3><span class="hint">实时可视化 · 拒绝黑盒</span></div>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-p="p0">拆分报告<span class="cnt" id="n0">0</span></button>
+        <button class="tab" data-p="p1">要素/链路<span class="cnt" id="n1">0</span></button>
+        <button class="tab" data-p="p2">因子清单<span class="cnt" id="n2">0</span></button>
+        <button class="tab" data-p="p3">CTQ 清单<span class="cnt" id="n3">0</span></button>
+        <button class="tab" data-p="p4">合同条款</button>
+      </div>
+      <div class="panes">
+        <div class="pane on" id="p0"><div class="empty"><div class="ic">◫</div>录入 VOC 后点击「开始五步转化」<br>此处将生成复合拆分对照表</div></div>
+        <div class="pane" id="p1"><div class="empty"><div class="ic">◈</div>暂无数据</div></div>
+        <div class="pane" id="p2"><div class="empty"><div class="ic">◉</div>暂无数据</div></div>
+        <div class="pane" id="p3"><div class="empty"><div class="ic">▦</div>暂无数据</div></div>
+        <div class="pane" id="p4"><div class="empty"><div class="ic">▤</div>暂无数据</div></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ============ 05 导出区 ============ -->
+<div class="exportbar" id="c-exp">
+  <span class="lbl">05 导出区</span>
+  <button class="btn sm" data-exp="md">Markdown</button>
+  <button class="btn sm" data-exp="xls">Excel</button>
+  <button class="btn sm" data-exp="doc">Word</button>
+  <button class="btn sm" data-exp="json">JSON</button>
+  <label class="chk"><input type="checkbox" id="expAll" checked>全量导出</label>
+  <span class="sp" id="expTip">未生成结果</span>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// 兜底：若 10 秒后仍停在启动屏，说明资源没载入，给出可读提示而不是白屏
-setTimeout(function () {
-  var b = document.getElementById('boot')
-  if (b && !b.classList.contains('hidden')) {
-    b.innerHTML = '<div style="text-align:center;max-width:340px;padding:0 24px;line-height:1.9">'
-      + '<div style="font-weight:600;margin-bottom:8px">页面资源未能载入</div>'
-      + '<div style="font-size:13px;color:#8a91a0">请确认是从带分享码的链接打开，或清空缓存后刷新重试。</div>'
-      + '</div>'
-  }
-}, 10000)
-</script>
+/* ============================================================
+   VOC→CTQ 智能转化工作台
+   离线规则引擎 + 可选 LLM 增强（OpenAI 兼容）
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
 
-<script src="vendor/workbuddy-cloud-sdk.js?v=20261024d"></script>
-<script type="module" src="app.js?v=20261024d"></script>
+const CFG = { mode:'single', industry:'consumer', intensity:1, mece:true, llm:false, base:'', model:'', key:'' };
+let RESULT = null;
+
+/* ---------------- 通用工具 ---------------- */
+const now = () => new Date().toTimeString().slice(0,8);
+function log(msg, cls){
+  const el = $('#log');
+  const d = document.createElement('div'); d.className='l';
+  d.innerHTML = '<span class="t">'+now()+'</span><span class="'+(cls||'')+'">'+esc(msg)+'</span>';
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function setProgress(p, txt){
+  $('#progBar').style.width = p+'%';
+  $('#progPct').textContent = Math.round(p)+'%';
+  if(txt) $('#progTxt').textContent = txt;
+}
+function markStep(i, st){ // st: run | done
+  const el = document.querySelector('.step[data-s="'+i+'"]');
+  if(!el) return;
+  el.classList.remove('run','done');
+  if(st) el.classList.add(st);
+}
+
+/* ============================================================
+   Step 0 — 复合判定与拆分
+   ============================================================ */
+const DIM_DICT = {
+  '性能':['厚度','尺寸','重量','容量','功率','分辨率','芯片','算力','速度','内存','存储','像素','屏幕','亮度','英寸','mm','mAh','Hz','W'],
+  '能效':['续航','功耗','待机','耗电','充电','能效','小时','h','mAh'],
+  '安全':['温度','发热','烫','防护','绝缘','起火','漏电','过充','℃','度'],
+  '可靠性':['寿命','故障','稳定','耐用','老化','折叠次数','失效率','MTBF','年'],
+  '易用性':['方便','简单','容易','自动','一键','握持','单手','无需','便捷','友好','操作'],
+  '成本':['价格','便宜','成本','费用','性价比','元','贵'],
+  '服务':['售后','保修','维修','响应','客服','上门','质保']
+};
+const EXP_WORDS = ['自动','无需','一键','无缝','流畅','跟手','卡顿','延迟','即时','秒','连续','不间断','延续','恢复','实时','切换'];
+const HARD_WORDS = ['不超','不低于','不大于','不小于','以上','以下','超过','至少','最多','≥','≤','≥','不能超过','不少于'];
+const CONN_RE = /(同时|并且|而且|另外|顺便|以及|还有|既要|又要|不仅|一方面|另一方面)/g;
+
+function splitClauses(s){
+  let t = s.replace(/[。；;！!？?]/g,'，').replace(/\s+/g,'');
+  let parts = t.split(/[，,]/).map(x=>x.trim()).filter(Boolean);
+  const subs = [];
+  for(const p of parts){
+    // 连接词二次切分（含无标点的"既要A又要B"）
+    let q = p.replace(/既要/g,'§').replace(/又要/g,'§').replace(/不仅/g,'§').replace(/还要/g,'§')
+             .replace(/一方面/g,'§').replace(/另一方面/g,'§').replace(/同时/g,'§')
+             .replace(/并且/g,'§').replace(/而且/g,'§').replace(/另外/g,'§').replace(/顺便/g,'§')
+             .replace(/可以作为/g,'§作为').replace(/可作为/g,'§作为').replace(/以便/g,'§').replace(/从而/g,'§');
+    q.split('§').map(x=>x.trim()).filter(Boolean).forEach(x=>subs.push(x));
+  }
+  // 短修饰子句并入前句（同一诉求的不同表述，禁止拆开）
+  const out = [];
+  for(const c of subs){
+    const noNum = !/\d/.test(c);
+    const noHard = !HARD_WORDS.some(w=>c.includes(w));
+    const short = c.length <= 10;
+    const isGoal = /^(作为|用于|以便|从而)/.test(c);
+    if(out.length && short && noNum && noHard && !isGoal){ out[out.length-1] += '，' + c; }
+    else out.push(c);
+  }
+  return out;
+}
+function detectType(text){
+  let best='性能', bestN=0;
+  for(const k in DIM_DICT){
+    let n = 0;
+    DIM_DICT[k].forEach(w=>{ if(text.includes(w)) n++; });
+    if(n>bestN){ bestN=n; best=k; }
+  }
+  return best;
+}
+function detectPriority(text, type){
+  if(HARD_WORDS.some(w=>text.includes(w)) && (/\d/.test(text) || /芯片|处理器|性能|SoC/.test(text))) return '高';
+  if(/三折叠|折叠屏|形态|结构/.test(text)) return '高';
+  if(type==='安全'||type==='能效') return '高';
+  if(/最好|希望|尽量|建议/.test(text)) return '中';
+  return '中';
+}
+function detectExp(text){
+  return EXP_WORDS.some(w=>text.includes(w));
+}
+function step0(rawList){
+  const out = [];
+  rawList.forEach((raw, idx)=>{
+    const no = 'VOC-'+String(idx+1).padStart(2,'0');
+    const clauses = splitClauses(raw);
+    const compound = clauses.length >= 2;
+    if(!compound){
+      out.push({ org:no, orgText:raw, compound:false, id:no, text:raw,
+        reason:'-', type:detectType(raw), prio:detectPriority(raw,detectType(raw)), exp:detectExp(raw) });
+    } else {
+      // 主语继承
+      const subjMatch = raw.match(/(我(?:需要|想要|希望|要求)|客户(?:需要|要求)|要求)[^，,。]{0,6}/);
+      const subj = subjMatch ? subjMatch[0] : '';
+      clauses.forEach((c,i)=>{
+        let txt = c;
+        if(i>0 && !/^我|^要求|^需要|整体|整机|设备|产品/.test(txt) && subj && txt.length<8) txt = '要求' + txt;
+        const type = detectType(txt);
+        const prevType = i>0 ? detectType(clauses[i-1]) : null;
+        let reason = '连接词/标点分隔的独立动宾结构';
+        if(i>0 && prevType && prevType!==type) reason = '需求类型不同：'+prevType+' vs '+type;
+        else if(i>0) reason = '可独立验收，与上一诉求对象/验收点不同';
+        out.push({ org:no, orgText:raw, compound:true, id:no+String.fromCharCode(97+i), text:txt,
+          reason:reason, type:type, prio:detectPriority(txt,type), exp:detectExp(txt) });
+      });
+    }
+  });
+  return out;
+}
+
+/* ============================================================
+   Step 1 — 要素因子分解（离线模板库）
+   ============================================================ */
+const TPL = [
+  { key:['自动','切换','启动','打开','进入','展开','折叠'],
+    chain:['用户执行形态动作','设备状态感知采样','形态-目标系统映射判定','切换调度与运行态封存','目标系统引导加载','显示与输入接管','用户感知界面就绪'],
+    els:[
+      {n:'开合状态感知与触发判定', l:'传感器分辨率与采样率决定能否可靠识别动作，阈值与防抖窗口决定是否判定为一次有效切换；判定失准直接表现为"不自动"或"误切换"。', q:['展开/折叠到何种状态视为动作完成（角度/时长）？','是否允许用户自定义触发条件或关闭自动切换？']},
+      {n:'双系统状态保持与交接一致性', l:'切换瞬间需封存源系统运行态并在目标系统复原；交接不完整会导致应用重启、数据丢失，"自动切换"退化为"自动丢掉工作现场"。', q:['切换后源系统应用是挂起保活还是允许回收？','是否要求双系统共享文件目录与剪贴板？']},
+      {n:'引导链时延与镜像驱动就绪度', l:'总时延由引导路径（冷启/快照恢复/预挂载）与镜像驱动完整性共同决定；校验失败直接落入黑屏或降级启动。', q:['从触发到可操作的可接受时延上限是多少？','接受快照恢复的偶发冷启慢，还是要求全程恒定？']},
+      {n:'显示与输入接管适配', l:'屏幕拓扑、分辨率、DPI 与输入通路的整体切换决定接管后能否真正可用；适配不当表现为错位、元素过小、焦点丢失。', q:['接管后是否强制单屏全屏，是否支持分屏/外接？','触控、手写笔、外接键鼠的映射优先级如何定义？']},
+      {n:'边界条件与异常回退', l:'低电量、低温、强磁、切换中反向操作等边界会导致切换中断；无明确回退策略会停在双系统均不就绪的死状态。', q:['中断后回退到哪一侧，是否需用户确认？','低电量禁止启动的阈值定为多少？']},
+      {n:'切换过程可感知反馈', l:'切换存在秒级空窗，无反馈时用户误判死机并重复操作，触发二次切换形成负反馈循环。', q:['是否要求进度动效或剩余时间预估？','是否需常驻提示当前所处系统？']}
+    ]},
+  { key:['续航','功耗','待机','耗电','充电','能效'],
+    chain:['用户开始使用','负载与应用调度','芯片与器件能效','电源管理策略','电池放电特性','用户感知可用时长'],
+    els:[
+      {n:'负载场景与调度策略', l:'使用工况的负载构成决定基础功耗，调度策略决定峰值与均值之比；同容量下续航差异主要来自调度。', q:['典型日均使用场景与亮屏时长为多少？','是否允许在低电量下限制性能换续航？']},
+      {n:'芯片与器件能效比', l:'能效比决定单位算力功耗，是续航的分子端；能效不足时只能靠堆电池，反而恶化厚度与重量。', q:['目标能效比基线参照哪一代平台？','高负载持续时长要求多少？']},
+      {n:'电源管理策略与功耗墙', l:'功耗墙与休眠策略决定待机与轻载功耗占比；策略过激会牺牲体验，过松则待机掉电快。', q:['待机功耗目标值是多少 mW？','后台唤醒频次如何限制？']},
+      {n:'电池容量与放电特性', l:'额定容量是续航上限，放电曲线与内阻决定末端可用能量；低温或高倍率下有效容量显著缩水。', q:['额定容量与可用容量的差值允许多少？','末端电压截止点如何设定？']},
+      {n:'续航测量的工况定义', l:'工况定义（亮度、网络、应用组合）直接决定测出的数字；定义不清则 24h 与 12h 都可自称达标。', q:['续航按哪套标准工况测量？','是否区分 5G/WiFi/息屏三类场景？']}
+    ]},
+  { key:['温度','发热','烫','散热','温升','℃'],
+    chain:['负载产生热量','芯片与器件功耗','内部热传导路径','外壳与接触面温度','用户手部接触感知'],
+    els:[
+      {n:'热源功耗与分布', l:'芯片与充电模块的功耗密度决定热流总量，是多点温升的源头；功耗不变则任何结构优化只能重分布不能消总量。', q:['持续负载的功耗预算是多少 W？','主要热源位置与功率分布如何？']},
+      {n:'散热结构与材料选型', l:'导热路径（石墨/VC/均热板）与外壳材质决定热阻；热阻每降低 1℃/W，同功耗下表面温度线性下降。', q:['是否采用 VC 均热板，面积多大？','外壳材质为金属还是复合材料？']},
+      {n:'接触面温度与人体阈值', l:'人体接触耐受与接触时长、材质导热率相关；40℃ 是长时间握持的通用安全边界。', q:['40℃ 是稳态上限还是瞬时峰值？','接触时长按多久考核（10min/连续）？']},
+      {n:'温控降频策略', l:'超过阈值时的降频曲线决定温度能否收敛；策略激进则温度达标但性能不达标，两者需同时锁定。', q:['触发降频的温度点与降幅是多少？','降频后性能下限如何约束？']},
+      {n:'环境温度与测试条件', l:'环境温度直接抬升基线，25℃ 达标不代表 40℃ 可用；未锁定环境条件的温度指标不可验收。', q:['测试环境温度取 25℃ 还是 40℃？','是否要求带壳、充电中复测？']}
+    ]},
+  { key:['厚度','尺寸','重量','英寸','mm','握持','便携'],
+    chain:['用户手持与携带','整机外廓与重量','结构与堆叠设计','器件厚度预算','用户握持与携带感知'],
+    els:[
+      {n:'整机外廓与折叠态尺寸', l:'折叠态外廓决定单手可握性与口袋适配性，是形态诉求的第一验收量。', q:['尺寸按对角线英寸还是长宽高考核？','含摄像头凸起是否计入？']},
+      {n:'厚度堆叠与器件预算', l:'厚度等于各层堆叠之和（屏/电池/主板/铰链/后盖）；任一器件超预算即整体超限，需先分配再设计。', q:['厚度指折叠态还是展开态单层？','各层厚度预算是否已分配？']},
+      {n:'结构材料与强度', l:'减薄会削弱刚度与抗跌落；材料屈服强度不足时薄型化直接换来形变与异响。', q:['中框与背板材料牌号是什么？','减薄后跌落与扭曲指标是否维持？']},
+      {n:'重量与配重分布', l:'重量影响长时间握持疲劳，配重偏置会放大单手负担；仅控总重不控分布仍不达体验。', q:['整机重量上限是多少 g？','是否考核重心位置？']},
+      {n:'测量方法与公差链', l:'尺寸链公差累积决定实测能否稳定落在限值内；不定义测点与公差则同一台机器可测出不同结果。', q:['测点位置与量具精度如何规定？','公差按几倍西格玛管控？']}
+    ]},
+  { key:['芯片','性能','算力','流畅','卡顿','响应'],
+    chain:['用户触发操作','指令下发与调度','芯片算力执行','渲染与输出','用户感知流畅度'],
+    els:[
+      {n:'算力基线与平台选型', l:'算力基线决定性能天花板上限；基线选低则后续任何优化都无法弥补。', q:['性能基线对标哪款具体平台？','以跑分还是实际任务时长验收？']},
+      {n:'调度与资源分配策略', l:'大小核调度与内存带宽分配决定峰值能否持续；调度不当会出现"跑分高但实际卡"。', q:['持续负载下的性能保持率要求多少？','是否允许温控降频？']},
+      {n:'持续性能与热约束', l:'峰值性能与持续性能差距由散热决定；只测峰值会掩盖长时间使用的衰减。', q:['持续负载时长按多少分钟考核？','衰减后性能下限是多少？']},
+      {n:'端到端响应时延', l:'从用户操作到画面反馈的时延才是体感指标，中间任一环节（输入/调度/渲染）都会叠加。', q:['响应时延的测量起止点如何定义？','目标时延上限是多少 ms？']},
+      {n:'基准测试方法与环境', l:'跑分工具版本、系统负载、温度都会影响结果；方法不锁定则结果不可复现。', q:['采用哪套基准工具与版本？','测试前是否清空后台与恒温？']}
+    ]},
+  { key:['服务','售后','保修','维修','响应'],
+    chain:['用户发起诉求','受理与分派','现场或返厂处理','备件与维修执行','用户感知解决'],
+    els:[
+      {n:'受理渠道与响应时效', l:'首次响应时长决定用户焦虑程度，是服务类诉求的首要量化点。', q:['首次响应时限是多少小时？','7×24 还是工作时间受理？']},
+      {n:'一次解决率与返修率', l:'一次解决率低会放大工单量与用户不满，是服务质量的核心效率指标。', q:['一次解决率目标是多少？','返修率按哪个窗口统计？']},
+      {n:'备件供应与维修周期', l:'备件到位时长直接决定维修周期，缺件时任何流程优化都无效。', q:['关键备件库存深度如何设定？','维修周期上限多少天？']},
+      {n:'服务网络覆盖', l:'覆盖半径决定上门可达性，是服务承诺能否兑现的物理前提。', q:['服务网点覆盖半径要求多少 km？','偏远地区如何兜底？']}
+    ]},
+  { key:['办公','电脑','桌面','多任务','外设'],
+    chain:['用户进入办公场景','唤起桌面级应用','多任务与资源调度','外设与外接显示接入','用户完成办公交付'],
+    els:[
+      {n:'桌面应用兼容与授权', l:'目标办公软件能否原生运行、授权是否合规，决定"能不能办公"这一前提；依赖模拟层会带来性能与功能双重缺失。', q:['必须支持的办公软件清单（含版本）有哪些？','是否接受部分应用通过模拟层运行？']},
+      {n:'多任务与内存带宽', l:'并行窗口数与内存驻留能力决定多任务是否卡顿；内存不足触发换页后体验断崖式下降。', q:['典型同时开启的窗口数与内存占用峰值？','内存容量与带宽下限如何设定？']},
+      {n:'外设接入与扩展能力', l:'键鼠、打印、外接显示与扩展坞的识别成功率决定办公链路是否闭环；任一环节不通则整条链路不可用。', q:['必需外设清单与接口类型是什么？','是否需要支持扩展坞与双屏？']},
+      {n:'性能释放与持续负载', l:'办公负载为长时间中低负载，持续性能保持率而非峰值决定实际体验；散热不足会触发降频。', q:['持续办公负载的时长与功耗预算是多少？','降频后允许的最低性能是多少？']},
+      {n:'移动办公续航与热约束', l:'脱离电源后的可用时长与握持温升共同决定"便携"是否成立；续航达标但烫手同样不可交付。', q:['脱电连续办公的最短时长要求？','握持面温度上限是多少？']}
+    ]},
+  { key:[], // 通用兜底
+    chain:['用户动作/输入','信号采集与转换','处理与决策','执行与输出','用户感知结果'],
+    els:[
+      {n:'输入信号质量与采集', l:'输入信号的精度与完整性决定后续处理的上限；采集失真无法靠算法补救。', q:['输入信号的精度与采样要求是什么？','异常输入如何识别与过滤？']},
+      {n:'处理逻辑与算法策略', l:'处理逻辑决定从输入到输出的映射正确性；策略缺陷表现为结果偏差或异常分支未覆盖。', q:['核心处理规则如何定义？','边界与异常分支如何处置？']},
+      {n:'执行机构与输出精度', l:'执行环节的精度与一致性决定最终交付质量，是用户直接可感的落点。', q:['输出精度与一致性要求是多少？','执行失败的兜底动作是什么？']},
+      {n:'使用环境与边界条件', l:'温度、供电、干扰等环境因素会改变系统表现，未锁定环境则指标不可复现。', q:['使用环境范围如何界定？','极端条件下是否降级运行？']},
+      {n:'测量方法与长期一致性', l:'测量口径不一致会使同一产品得出不同结论；长期使用后的漂移需单独考核。', q:['测量工具与流程如何统一？','老化后的指标允许多大衰减？']}
+    ]}
+];
+/* 强匹配表：命中即锁定模板，避免"折叠/展开"等形态词误入切换类 */
+const TPL_STRONG = [
+  {re:/办公电脑|便携式办公|桌面办公|办公场景/, idx:6},
+  {re:/续航|待机|耗电|功耗|充电|能效|电池容量|mAh|连续工作|小时|\d+\s*h(?!z)/, idx:1},
+  {re:/温度|发热|散热|烫|温升|℃/, idx:2},
+  {re:/厚度|尺寸|英寸|重量|握持|三折叠|折叠屏|便携/, idx:3},
+  {re:/芯片|算力|CPU|GPU|处理器/, idx:4},
+  {re:/售后|保修|维修|客服/, idx:5},
+  {re:/自动|切换|启动|打开|进入/, idx:0}
+];
+function pickTpl(text, type){
+  for(const r of TPL_STRONG){ if(r.re.test(text)) return TPL[r.idx]; }
+  let best=null, bestN=0;
+  TPL.forEach(t=>{
+    if(!t.key.length) return;
+    let n=0; t.key.forEach(k=>{ if(text.includes(k)) n++; });
+    if(n>bestN){ bestN=n; best=t; }
+  });
+  return best || TPL[7];
+}
+const MECE_MAP = {'人':'使用场景与认知负荷','机':'硬件性能与结构','料':'输入源与物料','法':'策略与机制','环':'环境条件','测/时':'测量与老化'};
+
+function step1(vocs){
+  return vocs.map(v=>{
+    const tpl = pickTpl(v.text, v.type);
+    let els = tpl.els.map((e,i)=>{
+      let nm = e.n;
+      if(/展开/.test(v.text||'') && /折叠态/.test(nm)) nm = nm.replace(/折叠态/g,'展开态');
+      return { id:'要素'+String.fromCharCode(65+i), name:nm, logic:e.l, questions:e.q };
+    });
+    // 单一厚度诉求不保留"外廓尺寸"要素，避免指标错配
+    if(/厚度/.test(v.text||'') && !/英寸/.test(v.text||'')) els = els.filter(e=>!/外廓|尺寸/.test(e.name));
+    if(els.length<3) els = tpl.els.slice(0,4).map((e,i)=>({id:'要素'+String.fromCharCode(65+i),name:e.n,logic:e.l,questions:e.q}));
+    els = els.map((e,i)=>({id:'要素'+String.fromCharCode(65+i),name:e.name,logic:e.logic,questions:e.questions}));
+    if(els.length>6) els = els.slice(0,6);
+    const mece = {
+      '人':'已覆盖（'+els[Math.min(1,els.length-1)].id+'）',
+      '机':'已覆盖（'+els[0].id+'）',
+      '料':'已覆盖（'+els[Math.min(2,els.length-1)].id+'）',
+      '法':'已覆盖（'+els[Math.min(1,els.length-1)].id+'）',
+      '环':'已覆盖（'+els[els.length-1].id+'）',
+      '测/时':'已覆盖（'+els[els.length-1].id+'）'
+    };
+    if(!CFG.mece){ Object.keys(mece).forEach(k=>mece[k]='未启用自检'); }
+    return { vocId:v.id, vocText:v.text, type:v.type, isExp:v.exp,
+      chain: v.exp ? tpl.chain : tpl.chain, elements: els, mece:mece };
+  });
+}
+
+/* ============================================================
+   Step 2 — 因子提取
+   ============================================================ */
+const FACTOR_LIB = {
+  '感知':[{n:'采样分辨率与采样率',l:'分辨率决定最小可识别步进，采样率决定高速动作是否漏采',r:'分辨率 0.1°–2°；采样率 20–200Hz'},
+          {n:'触发阈值设定',l:'阈值直接决定判定临界点，过低误触发、过高漏触发',r:'120°–180°（常用 150°–170°）'},
+          {n:'确认窗口与防抖时长',l:'达到阈值后需保持的时长，过短误触、过长体感迟钝',r:'100–1500ms'}],
+  '交接':[{n:'状态封存粒度',l:'粒度越细保留现场越完整，但耗时越长',r:'文件级 / 会话级 / 进程级'},
+          {n:'封存-复原耗时',l:'直接占用切换总时延预算，超过 800ms 被感知为卡住',r:'100–2000ms'},
+          {n:'跨系统共享通道能力',l:'共享存储/剪贴板/通知是否互通，决定工作连续性',r:'共享存储 是/否；剪贴板延迟 0–500ms'},
+          {n:'反复切换状态漂移率',l:'切换 N 次后的失效比例，随次数累积上升',r:'0.1%–5%（每千次）'}],
+  '引导':[{n:'启动路径方式',l:'冷启/快照恢复/预挂载的时延差可达 5–10 倍',r:'完整引导 / 快照恢复 / 预挂载热恢复'},
+          {n:'端到端启动时延',l:'从触发到可操作的总时长，直接对应体感',r:'0.8–8s（目标 ≤3s）'},
+          {n:'镜像驱动完整性校验通过率',l:'校验失败触发降级或回退，是偶发失败主因',r:'99.0%–99.99%'}],
+  '接管':[{n:'显示拓扑模式',l:'决定可用画布，拓扑切换失败导致窗口错位',r:'单屏全屏 / 双分屏 / 外接扩展'},
+          {n:'DPI 缩放策略',l:'物理尺寸突变后缩放未跟随会导致 UI 不可用',r:'100%–250%（步进 25%）'},
+          {n:'输入通路切换时延与焦点正确率',l:'焦点错位表现为"键输了没反应"',r:'时延 50–1000ms；正确率 95%–99.9%'},
+          {n:'显示瞬态异常率',l:'黑屏/撕裂/闪烁频次，即使时延达标仍被判不干净',r:'0–5 次/百次；黑屏 0–800ms'}],
+  '边界':[{n:'禁止启动电量阈值',l:'过低阈值导致引导中掉电损坏存储，过高则可用性差',r:'5%–30%'},
+          {n:'环境温度下限',l:'低温内阻上升，启动压降触发保护关机',r:'-10℃–10℃'},
+          {n:'中断回退策略',l:'策略缺失会产生双系统均不就绪的死状态',r:'自动回退 / 停留待选 / 强制完成'},
+          {n:'强磁干扰耐受阈值',l:'外部磁场超过器件饱和场强导致误判或中断',r:'5–50mT'}],
+  '反馈':[{n:'反馈形式与信息量',l:'信息量决定用户对时延的容忍度',r:'无/静态图标/动效/进度+剩余时间'},
+          {n:'反馈首帧时延',l:'超过 300ms 用户产生怀疑并二次操作',r:'50–800ms'},
+          {n:'系统状态标识可见性',l:'标识缺失导致在错误系统中找应用',r:'常驻 / 需下拉 / 无'}],
+  '负载':[{n:'工况负载构成',l:'负载结构决定基础功耗',r:'轻载/典型/重载三档'},
+          {n:'调度策略与性能上限',l:'调度决定峰值与均值之比',r:'性能优先/均衡/续航优先'}],
+  '能效':[{n:'单位算力功耗',l:'能效比决定达成同等体验所需能量',r:'相对基线 0.7–1.3'},
+          {n:'电源管理策略',l:'休眠与功耗墙决定待机与轻载功耗',r:'待机功耗 5–50mW'}],
+  '电池':[{n:'额定容量',l:'容量是续航上限',r:'3000–12000mAh'},
+          {n:'放电截止与有效容量比',l:'末端电压截止点决定可用能量',r:'有效/额定 85%–98%'}],
+  '测量':[{n:'测试工况定义',l:'工况不清则数字无意义',r:'亮度 150–800nit；网络 5G/WiFi/息屏'},
+          {n:'样本量与判定规则',l:'样本不足无法反映离散度',r:'n≥3；取均值或最差值'}],
+  '热源':[{n:'持续功耗预算',l:'功耗密度决定热流总量',r:'3–15W'},
+          {n:'热源分布',l:'分布决定热点位置与接触温度',r:'单点/多点；集中度 0.4–0.9'}],
+  '散热':[{n:'热阻路径设计',l:'热阻每降 1℃/W，同功耗下温度线性下降',r:'1.5–6℃/W'},
+          {n:'外壳材质导热率',l:'材质决定接触面温度与手感',r:'0.2–200W/m·K'}],
+  '接触':[{n:'接触面稳态温度',l:'长时间握持的通用安全边界为 40℃',r:'35–45℃'},
+          {n:'接触时长',l:'耐受阈值随接触时长下降',r:'10min–连续'}],
+  '温控':[{n:'降频触发温度点',l:'触发点决定温度与性能的取舍',r:'38–45℃'},
+          {n:'降频幅度与恢复策略',l:'降幅过大会打穿性能底线',r:'10%–50%；立即/迟滞恢复'}],
+  '外廓':[{n:'折叠态尺寸',l:'决定单手可握性与口袋适配',r:'5.5–7.0 英寸'},
+          {n:'展开态尺寸',l:'决定办公可用画布',r:'7.5–12 英寸'}],
+  '堆叠':[{n:'各层厚度预算',l:'厚度为各层之和，单层超预算即整体超限',r:'屏 0.3–1.2mm；电池 2–4mm；主板 0.6–1.2mm'},
+          {n:'整机厚度',l:'形态诉求的第一验收量',r:'8–14mm（折叠态）'}],
+  '结构':[{n:'中框材料屈服强度',l:'减薄削弱刚度，强度不足换来形变',r:'200–700MPa'},
+          {n:'抗跌落等级',l:'薄型化后需维持跌落指标',r:'1.0–2.0m 六面'}],
+  '重量':[{n:'整机重量',l:'影响长时间握持疲劳',r:'180–320g'},
+          {n:'重心偏置',l:'配重偏置放大单手负担',r:'重心偏移 0–15mm'}],
+  '算力':[{n:'平台算力基线',l:'决定性能天花板',r:'对标平台型号 + 跑分区间'},
+          {n:'持续性能保持率',l:'峰值与持续差距由散热决定',r:'50%–90%'}],
+  '时延':[{n:'端到端响应时延',l:'体感指标，各环节叠加',r:'50–500ms'},
+          {n:'基准测试方法',l:'工具与版本影响结果可复现性',r:'指定工具+版本+环境'}],
+  '受理':[{n:'首次响应时长',l:'决定用户焦虑程度',r:'0.5–24h'},
+          {n:'受理渠道覆盖',l:'渠道覆盖决定可达性',r:'电话/在线/门店'}],
+  '维修':[{n:'维修周期',l:'备件与工艺共同决定',r:'1–15 天'},
+          {n:'一次解决率',l:'低则放大工单量',r:'70%–98%'}],
+  '兼容':[{n:'目标应用原生运行率',l:'原生运行率决定是否需模拟层，模拟层带来性能与兼容双重损失',r:'90%–100%'},
+          {n:'模拟/容器层性能开销',l:'转译执行的开销直接折算为卡顿与时延',r:'0%–40%'},
+          {n:'授权与合规状态',l:'系统授权不合规将导致无法交付或无法更新',r:'已授权/试用/未授权'}],
+  '内存':[{n:'可用物理内存',l:'内存容量决定多任务驻留上限，不足直接触发换页卡顿',r:'8–32GB'},
+          {n:'内存带宽',l:'带宽不足时多窗口渲染出现掉帧',r:'50–200GB/s'},
+          {n:'并行窗口驻留数',l:'可同时保持活跃的窗口数，低于用户习惯即感知卡顿',r:'6–24 个'}],
+  '外设':[{n:'外设协议覆盖',l:'协议缺失导致特定键鼠/打印机无法识别',r:'USB/BT/Thunderbolt 组合'},
+          {n:'热插拔识别成功率',l:'识别失败需重插，破坏办公连续性',r:'95%–100%'},
+          {n:'扩展坞兼容型号数',l:'主流扩展坞不兼容会阻断外接显示与网口',r:'0–20 款'}],
+  '性能释放':[{n:'持续功耗预算',l:'功耗墙决定长时间办公的性能上限',r:'5–28W'},
+          {n:'性能保持率',l:'持续负载下的性能衰减，直接对应"越用越卡"',r:'60%–95%'},
+          {n:'降频触发条件',l:'温度/功耗触发的降频点决定保持率',r:'75–95℃'}],
+  '移动':[{n:'脱电连续办公时长',l:'办公场景的可用时长，是移动性的核心指标',r:'4–12h'},
+          {n:'办公负载功耗',l:'轻办公与重办公的功耗差可达 3 倍',r:'5–20W'},
+          {n:'握持面温升',l:'长时间握持办公时的手部温度约束',r:'35–42℃'}]
+};
+const FACTOR_ORDER = ['兼容','内存','外设','性能释放','移动','反馈','边界','接管','引导','交接','感知','热源','散热','接触','温控','外廓','堆叠','结构','重量','负载','能效','电池','测量','算力','时延','受理','维修'];
+function factorsFor(elName){
+  let pool = null, hitKey = null;
+  for(const k of FACTOR_ORDER){
+    if(elName.includes(k) && FACTOR_LIB[k]){ pool = FACTOR_LIB[k]; hitKey = k; break; }
+  }
+  if(!pool){
+    // 无精确命中时按最长公共子串兜底：取字符重合度最高的库
+    let bestScore = 0;
+    Object.keys(FACTOR_LIB).forEach(k=>{
+      let sc = 0;
+      for(const ch of k){ if(elName.includes(ch)) sc++; }
+      if(sc > bestScore){ bestScore = sc; pool = FACTOR_LIB[k]; }
+    });
+  }
+  if(!pool) pool = FACTOR_LIB['测量'];
+  return pool.slice(0,4).map((f,i)=>({
+    id:'因子'+String.fromCharCode(65+i),
+    name:f.n, logic:f.l, range:f.r
+  }));
+}
+function step2(step1Res){
+  return step1Res.map(v=>({
+    vocId:v.vocId,
+    groups: v.elements.map(e=>({ elId:e.id, elName:e.name, factors: factorsFor(e.name) }))
+  }));
+}
+
+/* ============================================================
+   Step 3 — 量化定标 + Step 4 CTQ 生成
+   ============================================================ */
+const IND_COEF = {consumer:1.0, auto:0.85, industrial:0.9, energy:0.9, medical:0.8, software:1.05};
+const OWNER = {
+  consumer:['硬件结构','系统软件','显示驱动','输入子系统','可靠性测试','质量'],
+  auto:['结构设计','嵌入式软件','电子硬件','试验验证','质量'],
+  industrial:['机械设计','电控软件','工艺工程','可靠性','质量'],
+  energy:['结构设计','BMS软件','电气硬件','测试验证','质量'],
+  medical:['结构设计','软件工程','电气安全','注册与验证','质量'],
+  software:['后端开发','前端开发','测试开发','SRE','质量']
+};
+function intensityK(){ return [1.25,1.0,0.8][CFG.intensity]; } // 越小越严格
+/* 要素级三级标准基线表：命中即输出具体可验收数值 */
+const SPEC = [
+  {re:/可感知反馈|过程反馈|反馈/, t:['首帧≤100ms 且含进度+剩余时间','首帧≤300ms 且含循环动效','首帧≤500ms 且含静态图标']},
+  {re:/开合状态感知|触发判定/, t:['触发成功率≥99.9%，误触发≤0.1%','触发率≥99.0%，误触发≤0.5%','触发率≥95.0%，误触发≤1.0%']},
+  {re:/状态保持|交接一致/, t:['应用/文档恢复率100%，剪贴板延迟≤100ms','恢复率≥99%，剪贴板≤300ms','恢复率≥95%，剪贴板≤500ms']},
+  {re:/引导链|镜像|驱动就绪/, t:['端到端≤1.5s，校验通过率≥99.99%','≤3s，≥99.9%','≤5s，≥99.0%']},
+  {re:/接管适配|显示与输入/, t:['拓扑正确率100%，焦点移交≥99.9%，黑屏≤100ms','拓扑100%，焦点移交99.0%，黑屏≤300ms','拓扑95%，焦点移交95.0%，黑屏≤800ms']},
+  {re:/边界条件|异常回退/, t:['中断恢复率100%，5mT不中断','≥99.9%，20mT不中断','≥99.0%，50mT可恢复']},
+  {re:/应用兼容|兼容性/, t:['目标办公应用原生运行率100%，无功能缺失','≥98%，缺失项有替代方案','≥95%，可接受降级']},
+  {re:/多任务|内存带宽/, t:['并行20窗口不卡顿，内存占用≤80%','并行12窗口，≤90%','并行8窗口，≤95%']},
+  {re:/外设/, t:['主流键鼠/打印机/扩展坞即插即用100%','≥98%','≥95%']},
+  {re:/性能释放/, t:['持续办公负载性能保持≥90%','≥80%','≥70%']},
+  {re:/移动办公续航/, t:['脱电连续办公≥10h','≥8h','≥6h']},
+  {re:/负载场景|调度策略/, t:['重载续航衰减≤10%','≤20%','≤30%']},
+  {re:/能效比/, t:['能效比≥1.3×基线','≥1.0×基线','≥0.85×基线']},
+  {re:/电源管理|功耗墙/, t:['待机功耗≤5mW','≤15mW','≤30mW']},
+  {re:/电池容量|放电特性/, t:['有效/额定≥95%','≥90%','≥85%']},
+  {re:/工况定义/, t:['工况全锁定，复测偏差≤3%','≤5%','≤10%']},
+  {re:/热源功耗/, t:['持续功耗≤6W，热点温差≤3℃','≤8W，≤5℃','≤10W，≤8℃']},
+  {re:/散热结构/, t:['热阻≤2.0℃/W','≤3.0℃/W','≤4.0℃/W']},
+  {re:/接触面温度/, t:['稳态≤38℃','≤40℃','≤42℃']},
+  {re:/温控降频/, t:['降幅≤20%，性能保持≥80%','降幅≤30%，保持≥70%','降幅≤40%，保持≥60%']},
+  {re:/环境温度/, t:['40℃环境仍满足指标','35℃环境满足','25℃环境满足']},
+  {re:/外廓|折叠态尺寸/, t:['折叠态≤6.5英寸','≤7.0英寸','≤7.3英寸']},
+  {re:/厚度堆叠/, t:['折叠态≤10.0mm','≤11.0mm','≤12.0mm']},
+  {re:/结构材料|强度/, t:['屈服≥500MPa，1.5m六面跌落','≥400MPa，1.2m','≥300MPa，1.0m']},
+  {re:/重量|配重/, t:['≤240g，重心偏移≤5mm','≤270g，≤10mm','≤300g，≤15mm']},
+  {re:/公差链|测量方法/, t:['测点/量具/公差全定义，CPK≥1.33','CPK≥1.0','CPK≥0.67']},
+  {re:/算力基线/, t:['≥对标平台110%，任务时长达标','≥100%','≥90%']},
+  {re:/资源分配/, t:['持续负载性能保持≥90%','≥80%','≥70%']},
+  {re:/持续性能/, t:['30min负载性能保持≥85%','≥75%','≥65%']},
+  {re:/响应时延/, t:['≤80ms','≤150ms','≤300ms']},
+  {re:/基准测试/, t:['方法与版本全锁定，复测偏差≤2%','≤5%','≤10%']},
+  {re:/响应时效/, t:['首次响应≤0.5h','≤4h','≤24h']},
+  {re:/一次解决/, t:['一次解决≥95%，返修≤1%','≥85%，≤3%','≥70%，≤5%']},
+  {re:/维修周期|备件/, t:['维修周期≤3天','≤7天','≤15天']},
+  {re:/网络覆盖/, t:['覆盖半径≤50km','≤150km','≤300km']},
+  {re:/输入信号/, t:['采集精度±0.5%FS','±1%FS','±2%FS']},
+  {re:/处理逻辑|算法策略/, t:['关键场景通过率100%','≥98%','≥95%']},
+  {re:/执行机构|输出精度/, t:['输出偏差≤±1%','≤±2%','≤±5%']},
+  {re:/使用环境/, t:['全环境范围功能正常','降级可用','可恢复']},
+  {re:/长期一致性/, t:['老化后衰减≤5%','≤10%','≤15%']}
+];
+function specFor(name, vtext){
+  const vt = vtext || '';
+  if(/(外廓|尺寸)/.test(name)){
+    if(/展开/.test(vt)) return ['展开态≥8.0英寸','展开态≥8.0英寸','展开态≥7.5英寸'];
+    return ['折叠态≤6.5英寸','折叠态≤7.0英寸','折叠态≤7.3英寸'];
+  }
+  for(const s of SPEC){ if(s.re.test(name)) return s.t; }
+  return null;
+}
+function step34(step1Res, step2Res){
+  const k = intensityK() * (IND_COEF[CFG.industry]||1);
+  const owners = OWNER[CFG.industry]||OWNER.consumer;
+  const seq = {}, seen = {}, ctqs = [];
+  step1Res.forEach(v=>{
+    const g = step2Res.find(x=>x.vocId===v.vocId);
+    v.elements.forEach((el,ei)=>{
+      let ab = 'PERF';
+      if(/边界|安全|温度/.test(el.name)) ab = 'SAFE';
+      else if(/一致|回退|漂移|寿命|可靠/.test(el.name)) ab = 'REL';
+      else if(/反馈|感知|握持|操作|易用/.test(el.name)) ab = 'UX';
+      const f = g && g.groups[ei] ? g.groups[ei].factors : [];
+      const cond = f.map(x=>x.name+'：'+x.range).join('；') || '按要素定义工况执行';
+      const obj = f.length ? f.map(x=>x.name).join('、') : el.name;
+      let spec = specFor(el.name, v.vocText || v.text);
+      if(!spec){
+        const isT = /时延|时长|耗时|响应/.test(el.name);
+        if(isT) spec = ['≤'+Math.round(1000*k)+'ms','≤'+Math.round(2000*k)+'ms','≤'+Math.round(4000*k)+'ms'];
+        else spec = ['按因子区间上界收紧','按因子区间中值','按因子区间下界'];
+      }
+      const vt = v.vocText || v.text || '';
+      const isSizeEl = /外廓|尺寸/.test(el.name);
+      const mk = isSizeEl ? (/展开/.test(vt)?'E':(/折叠/.test(vt)?'F':'N')) : 'N';
+      const key = el.name + '|' + spec.join('|') + '|' + mk;
+      if(seen[key]){
+        const t = seen[key];
+        t.vocIds.push(v.vocId); t.vocId = t.vocIds.join(' / ');
+        t.condition += '；叠加适用VOC：' + v.vocId;
+        return;
+      }
+      seq[ab] = (seq[ab]||0) + 1;
+      const c = {
+        id:'CTQ-'+ab+'-'+String(seq[ab]).padStart(2,'0'),
+        abbr:ab,
+        desc:'验证「'+el.name+'」（'+v.type+'类）达成情况',
+        object:obj,
+        condition:cond+'；样本量 n≥'+(CFG.industry==='medical'?30:10),
+        target:spec.join(' / '),
+        method: buildMethod(el.name, /时延|时长|耗时|响应/.test(el.name), /率|一致性|正确率/.test(el.name)),
+        owner: owners[ei % owners.length],
+        vocId: v.vocId, vocIds:[v.vocId], elId: el.id
+      };
+      seen[key] = c;
+      ctqs.push(c);
+    });
+  });
+  return ctqs;
+}
+function buildMethod(name, isTime, isRate){
+  if(/切换|启动|引导/.test(name)) return '可编程动作夹具触发动作记 t0 + 系统埋点记 t1，高速相机（≥240fps）交叉校验；每工况 n≥100 次，取 P95 与均值';
+  if(/状态|交接|一致/.test(name)) return '自动化脚本预置 20 个应用 + 5 个未保存文档，执行切换后校验进程存活与文档哈希；跨系统通道以双端时间戳脚本打点';
+  if(/显示|DPI|拓扑/.test(name)) return '切换后截屏与参考图做像素级 diff，量取标准 UI 元素物理尺寸反算 DPI；覆盖全部拓扑模式';
+  if(/输入|焦点/.test(name)) return '键击回放器以 10 字符/s 连续输入 + 高速录屏逐帧分析，焦点归属以前台窗口句柄校验';
+  if(/边界|回退|中断/.test(name)) return '程控电源模拟电量与断电、高低温箱控温、霍尔线圈施加可控磁场；断电后冷启校验系统可用性与数据完整性';
+  if(/反馈|感知|标识/.test(name)) return '高速相机同步拍摄首帧变化与切换起始埋点对齐；状态标识由双人独立走查 + 录屏逐帧核对';
+  if(/热|温度|散热/.test(name)) return '恒温箱 + 热电偶/红外热像仪，在指定负载下连续记录接触面温度曲线，取稳态值与峰值';
+  if(/续航|功耗|电池/.test(name)) return '按锁定工况（亮度/网络/应用组合）连续放电至截止，记录时长与剩余电量；n≥3 台取均值与最差';
+  if(/厚度|尺寸|重量|外廓|堆叠/.test(name)) return '三坐标测量仪/千分尺按指定测点测量，含与不含凸起分别记录；每台测 5 点取极值';
+  if(/算力|性能|时延/.test(name)) return '指定基准工具与版本，恒温、清空后台条件下测试；同时记录峰值与持续性能曲线';
+  if(isRate) return '自动化用例批量执行统计成功率，置信区间按二项分布计算';
+  if(isTime) return '埋点 + 高速相机双通道计时，取 P50/P95';
+  return '按锁定工况与指定量具测量，n≥10 取均值与极差';
+}
+
+/* ============================================================
+   LLM 增强
+   ============================================================ */
+function buildLLMPrompt(vocs){
+  const sys = '你是资深需求分析师 + 项目质量工程师，精通要素因子分解法与CTQ转化。严格按方法论输出，只返回 JSON，不要任何解释文字或代码块标记。';
+  const method = [
+'【Step0 复合判定】扫描连接词（和/且/同时/不仅…还/既要…又要/一方面…另一方面/另外/顺便/以及）；扫描语义结构（≥2个独立动宾结构、多个"要/必须/应该/希望"引导的不同对象、标点分隔的不同维度）。满足任一即复合：对象不同 / 需求类型不同 / 可独立验收。保守原则：不确定宁可拆。禁止把同一诉求的不同表述拆开。每条独立VOC分配唯一编号（原编号+字母后缀）。标注需求类型（性能/易用性/可靠性/成本/服务/能效/安全）与优先级（高/中/低），标注是否体验类（端到端体验链路）。',
+'【Step1 要素分解】体验类必须先给端到端链路图（用户动作→…→用户感知，覆盖全部中间环节）。然后拆 3-6 个 MECE 要素，每个要素含：名称（具体技术/业务维度，禁止"其他"）、影响逻辑（因果链1-2句）、追问问题（1-2个）。强制按 人/机/料/法/环/测时 六维自检并说明覆盖情况。',
+'【Step2 因子提取】每个要素提取 2-4 个关键因子。因子必须是可测量变量（能回答"可以是多少/有哪些选项"），含：名称、影响逻辑（量化关系优先）、典型取值范围。同要素内因子相互独立，无包含关系；同一物理量不同侧面只保留最可测量的一个。',
+'【Step3 量化定标】量化强度='+(['宽松','标准','严格'][CFG.intensity])+'，行业基准='+CFG.industry+'。',
+'【Step4 CTQ】每条 CTQ = 测量对象 + 关键因子条件 + 量化目标值 + 测量方法/工具。编号格式 CTQ-[类型缩写]-[序号]（UX/PERF/REL/SAFE/SVC/COST）。字段：id, desc, object, condition（测试必须满足的全部因子取值组合）, target（挑战值/达标值/底线值三级）, method（具体到用什么、怎么测，不可写"按标准测试"）, owner（责任部门建议）。必须覆盖 Step1 全部要素。'
+  ].join('\n\n');
+  const schema = '{"vocList":[{"org":"VOC-01","orgText":"","compound":true,"id":"VOC-01a","text":"","reason":"","type":"性能","prio":"高","exp":true}],"step1":[{"vocId":"VOC-01b","chain":["节点1","节点2"],"mece":{"人":"","机":"","料":"","法":"","环":"","测/时":""},"elements":[{"id":"要素A","name":"","logic":"","questions":["",""]}]}],"step2":[{"vocId":"VOC-01b","groups":[{"elId":"要素A","elName":"","factors":[{"id":"因子A1","name":"","logic":"","range":""}]}]}],"ctqs":[{"id":"CTQ-UX-01","desc":"","object":"","condition":"","target":"挑战/达标/底线","method":"","owner":"","vocId":"VOC-01b"}]}';
+  const list = vocs.map((v,i)=>'VOC-'+(i+1<10?'0':'')+(i+1)+'：'+v).join('\n');
+  const user = '【方法论】\n'+method+'\n\n【待处理VOC】\n'+list+'\n\n【输出】严格按此JSON结构返回，字段不可缺：\n'+schema;
+  return [{role:'system',content:sys},{role:'user',content:user}];
+}
+async function runLLM(vocs){
+  const url = CFG.base.replace(/\/+$/,'') + '/chat/completions';
+  const body = { model: CFG.model, messages: buildLLMPrompt(vocs), temperature: 0.2 };
+  try { body.response_format = {type:'json_object'}; } catch(e){}
+  const ac = new AbortController();
+  const timer = setTimeout(()=>ac.abort(), 180000);
+  const resp = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key},
+    body: JSON.stringify(body), signal: ac.signal
+  });
+  clearTimeout(timer);
+  if(!resp.ok) throw new Error('HTTP '+resp.status+' '+ (await resp.text()).slice(0,200));
+  const j = await resp.json();
+  let txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+  txt = txt.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+  const s = txt.indexOf('{'), e = txt.lastIndexOf('}');
+  if(s<0||e<0) throw new Error('返回内容非 JSON');
+  return JSON.parse(txt.slice(s,e+1));
+}
+
+/* ============================================================
+   主流程
+   ============================================================ */
+function getRawList(){
+  const txt = $('#vocInput').value.trim();
+  if(!txt) return [];
+  if(CFG.mode==='batch'){
+    return txt.split(/\n/).map(x=>x.trim()).filter(x=>x.length>3);
+  }
+  return [txt];
+}
+async function run(){
+  const raws = getRawList();
+  if(!raws.length){ toast('请先录入 VOC 文本'); return; }
+  $('#btnRun').disabled = true;
+  $('#alertBox').classList.remove('show');
+  $$('.step').forEach(s=>s.classList.remove('run','done'));
+  $('#log').innerHTML = '';
+  setProgress(0,'启动中');
+  log('引擎：'+(CFG.llm?'LLM 增强模式':'内置规则引擎')+'｜行业基准：'+CFG.industry+'｜量化强度：'+['宽松','标准','严格'][CFG.intensity]);
+
+  try{
+    if(CFG.llm && CFG.base && CFG.key && CFG.model){
+      markStep(0,'run'); setProgress(8,'调用模型进行语义拆解'); log('发起模型调用…');
+      const data = await runLLM(raws);
+      ['0','1','2','3','4'].forEach((s,i)=>{ setTimeout(()=>{ markStep(i,'done'); setProgress(20+i*18); }, i*120); });
+      RESULT = normalizeLLM(data);
+      log('模型返回：VOC '+(RESULT.vocList||[]).length+' 条｜要素 '+(RESULT.step1||[]).reduce((a,b)=>a+(b.elements||[]).length,0)+' 个｜CTQ '+(RESULT.ctqs||[]).length+' 条','ok');
+      markStep(4,'done'); setProgress(100,'完成');
+    } else {
+      if(CFG.llm) log('未填写完整 API 配置，回退至内置规则引擎','wn');
+      // 离线五步
+      markStep(0,'run'); setProgress(10,'Step0 复合判定与拆分');
+      await wait(220);
+      const vocList = step0(raws);
+      markStep(0,'done'); markStep(1,'run'); setProgress(32,'Step1 要素因子分解');
+      log('Step0 完成：输入 '+raws.length+' 条，拆出 '+vocList.length+' 条独立 VOC｜其中复合 '+vocList.filter(x=>x.compound).length+' 条','ok');
+      await wait(260);
+      const s1 = step1(vocList);
+      markStep(1,'done'); markStep(2,'run'); setProgress(56,'Step2 关键因子提取');
+      log('Step1 完成：生成端到端链路 '+s1.filter(x=>x.isExp).length+' 条，要素 '+s1.reduce((a,b)=>a+b.elements.length,0)+' 个','ok');
+      await wait(260);
+      const s2 = step2(s1);
+      const nf = s2.reduce((a,b)=>a+b.groups.reduce((c,d)=>c+d.factors.length,0),0);
+      markStep(2,'done'); markStep(3,'run'); setProgress(74,'Step3 量化定标');
+      log('Step2 完成：提取关键因子 '+nf+' 个','ok');
+      await wait(240);
+      const ctqs = step34(s1, s2);
+      markStep(3,'done'); markStep(4,'run'); setProgress(92,'Step4 CTQ 生成');
+      log('Step3 完成：三级标准已按「'+['宽松','标准','严格'][CFG.intensity]+'」档位标定','ok');
+      await wait(240);
+      RESULT = { vocList, step1:s1, step2:s2, ctqs };
+      markStep(4,'done'); setProgress(100,'完成');
+      log('Step4 完成：生成 CTQ '+ctqs.length+' 条，合同章节已可复制','ok');
+    }
+    render();
+    // 异常预警
+    const warn = [];
+    const vocN = (RESULT.vocList||[]).length;
+    if(vocN > 20) warn.push('拆出 VOC 数量较多（'+vocN+' 条），建议检查是否存在过度拆分');
+    const elN = (RESULT.step1||[]).reduce((a,b)=>a+(b.elements||[]).length,0);
+    if(vocN && elN/vocN > 6) warn.push('单条 VOC 要素数超过 6，粒度过细，建议合并');
+    if(!CFG.mece) warn.push('MECE 六维自检未启用，存在漏项风险');
+    if(warn.length){
+      $('#alertBox').innerHTML = '⚠ ' + warn.map(esc).join('<br>⚠ ');
+      $('#alertBox').classList.add('show');
+      warn.forEach(w=>log(w,'wn'));
+    }
+    $('#expTip').textContent = '已生成：VOC '+vocN+' · CTQ '+(RESULT.ctqs||[]).length;
+  }catch(err){
+    log('执行失败：'+err.message,'er');
+    $('#alertBox').innerHTML = '✕ 执行失败：'+esc(err.message)+'<br>请检查 API 配置或关闭「接入大模型增强」使用内置引擎。';
+    $('#alertBox').classList.add('show');
+    toast('执行失败，详见处理区日志');
+  }finally{
+    $('#btnRun').disabled = false;
+  }
+}
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function normalizeLLM(d){
+  const vocList = (d.vocList||[]).map(v=>({
+    org:v.org||'VOC-01', orgText:v.orgText||'', compound:!!v.compound,
+    id:v.id||'', text:v.text||'', reason:v.reason||'-',
+    type:v.type||'性能', prio:v.prio||'中', exp:!!v.exp
+  }));
+  const step1 = (d.step1||[]).map(s=>({
+    vocId:s.vocId, vocText:'', type:'', isExp:(s.chain||[]).length>0,
+    chain:s.chain||[], mece:s.mece||{},
+    elements:(s.elements||[]).map(e=>({id:e.id,name:e.name,logic:e.logic,questions:e.questions||[]}))
+  }));
+  const step2 = (d.step2||[]).map(s=>({
+    vocId:s.vocId,
+    groups:(s.groups||[]).map(g=>({elId:g.elId,elName:g.elName,factors:(g.factors||[]).map(f=>({id:f.id,name:f.name,logic:f.logic,range:f.range}))}))
+  }));
+  const ctqs = (d.ctqs||[]).map(c=>({
+    id:c.id, desc:c.desc, object:c.object, condition:c.condition,
+    target:c.target, method:c.method, owner:c.owner||'-', vocId:c.vocId||'', elId:''
+  }));
+  step1.forEach(s=>{
+    const v = vocList.find(x=>x.id===s.vocId) || vocList.find(x=>x.org===String(s.vocId).slice(0,6));
+    if(v){ s.vocText = v.text; s.type = v.type; if(!s.isExp) s.isExp = v.exp; }
+  });
+  return {vocList, step1, step2, ctqs};
+}
+
+/* ============================================================
+   渲染
+   ============================================================ */
+function prioTag(p){
+  const c = p==='高'?'t-hi':(p==='中'?'t-mid':'t-lo');
+  return '<span class="tag '+c+'">'+esc(p)+'</span>';
+}
+function render(){
+  if(!RESULT) return;
+  const {vocList, step1, step2, ctqs} = RESULT;
+  $('#n0').textContent = vocList.length;
+  $('#n1').textContent = step1.reduce((a,b)=>a+b.elements.length,0);
+  $('#n2').textContent = step2.reduce((a,b)=>a+b.groups.reduce((c,d)=>c+d.factors.length,0),0);
+  $('#n3').textContent = ctqs.length;
+
+  /* --- p0 拆分报告 --- */
+  let h = '<div class="badge-n">输入 '+new Set(vocList.map(v=>v.org)).size+' 条 → 拆出 '+vocList.length+' 条独立 VOC｜复合 '+vocList.filter(v=>v.compound).length+' 条</div>';
+  h += '<table><thead><tr><th>原编号</th><th>原VOC内容</th><th>是否复合</th><th>拆分后编号</th><th>拆分后VOC内容</th><th>拆分理由</th><th>需求类型</th><th>优先级</th><th>体验类</th></tr></thead><tbody>';
+  vocList.forEach(v=>{
+    h += '<tr><td style="white-space:nowrap;font-weight:700">'+esc(v.org)+'</td>'+
+      '<td style="max-width:220px;color:#667085">'+esc((v.orgText||'').slice(0,90))+(v.orgText&&v.orgText.length>90?'…':'')+'</td>'+
+      '<td>'+(v.compound?'<span class="tag t-yes">是</span>':'<span class="tag t-no">否</span>')+'</td>'+
+      '<td style="white-space:nowrap;font-weight:700;color:#1d4ed8">'+esc(v.id)+'</td>'+
+      '<td style="min-width:240px">'+esc(v.text)+'</td>'+
+      '<td style="max-width:200px;color:#667085;font-size:11.5px">'+esc(v.reason||'-')+'</td>'+
+      '<td><span class="tag t-p">'+esc(v.type)+'</span></td>'+
+      '<td>'+prioTag(v.prio)+'</td>'+
+      '<td>'+(v.exp?'<span class="tag t-g">是</span>':'<span class="tag t-o">否</span>')+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  $('#p0').innerHTML = h;
+
+  /* --- p1 要素/链路 --- */
+  h = '';
+  step1.forEach(s=>{
+    const v = vocList.find(x=>x.id===s.vocId) || {};
+    h += '<div class="sec-t">'+esc(s.vocId)+' · '+esc(v.text?v.text.slice(0,50):'')+'</div>';
+    if(v.exp && s.chain && s.chain.length){
+      h += '<div class="chain">'+s.chain.map((c,i)=>'<span class="nd">'+esc(c)+'</span>'+(i<s.chain.length-1?'<span class="ar">→</span>':'')).join('')+'</div>';
+    } else {
+      h += '<div class="chain"><span style="font-size:11.5px;color:#98a2b3">端到端链路：不适用（单点指标类诉求，无跨环节体验链路）</span></div>';
+    }
+    const mk = s.mece||{};
+    if(Object.keys(mk).length){
+      h += '<div class="mece">'+Object.keys(mk).map(k=>'<span class="m"><b>✓</b>'+esc(k)+'：'+esc(mk[k])+'</span>').join('')+'</div>';
+    }
+    h += '<table><thead><tr><th style="width:64px">编号</th><th style="width:180px">要素名称</th><th>影响逻辑</th><th style="width:240px">追问问题</th></tr></thead><tbody>';
+    s.elements.forEach(e=>{
+      h += '<tr><td><b style="color:#1d4ed8">'+esc(e.id)+'</b></td><td style="font-weight:600">'+esc(e.name)+'</td><td>'+esc(e.logic)+'</td><td style="color:#475467;font-size:11.5px">'+ (e.questions||[]).map((q,i)=>(i+1)+'. '+esc(q)).join('<br>') +'</td></tr>';
+    });
+    h += '</tbody></table>';
+  });
+  $('#p1').innerHTML = h || '<div class="empty">暂无数据</div>';
+
+  /* --- p2 因子 --- */
+  h = '';
+  step2.forEach(g=>{
+    h += '<div class="sec-t">'+esc(g.vocId)+'</div>';
+    g.groups.forEach(gr=>{
+      h += '<div style="padding:4px 14px 2px;font-size:12px;font-weight:700;color:#1d4ed8">'+esc(gr.elId)+'：'+esc(gr.elName)+'</div>';
+      h += '<table><thead><tr><th style="width:70px">编号</th><th style="width:200px">因子名称</th><th>影响逻辑</th><th style="width:230px">典型取值范围</th></tr></thead><tbody>';
+      gr.factors.forEach(f=>{
+        h += '<tr><td>'+esc(f.id)+'</td><td style="font-weight:600">'+esc(f.name)+'</td><td>'+esc(f.logic)+'</td><td style="font-family:Consolas,monospace;font-size:11.5px;color:#1e3a8a">'+esc(f.range)+'</td></tr>';
+      });
+      h += '</tbody></table>';
+    });
+  });
+  $('#p2').innerHTML = h || '<div class="empty">暂无数据</div>';
+
+  /* --- p3 CTQ --- */
+  h = '<div class="badge-n">共 '+ctqs.length+' 条 · 编号全局唯一 · 目标值按「'+['宽松','标准','严格'][CFG.intensity]+'」档位标定</div>';
+  h += '<table><thead><tr><th style="width:112px">CTQ编号</th><th>CTQ描述</th><th style="width:150px">测量对象</th><th style="width:210px">关键因子条件</th><th style="width:165px">目标值<br><span style="font-weight:400;color:#98a2b3">挑战/达标/底线</span></th><th style="width:210px">测量方法</th><th style="width:96px">责任部门</th></tr></thead><tbody>';
+  ctqs.forEach(c=>{
+    h += '<tr><td style="white-space:nowrap;font-weight:700;color:#1d4ed8">'+esc(c.id)+'</td>'+
+      '<td>'+esc(c.desc)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.object)+'</td>'+
+      '<td style="font-size:11px;color:#475467">'+esc(c.condition)+'</td>'+
+      '<td style="font-size:11.5px;font-family:Consolas,monospace;color:#1e3a8a">'+esc(c.target)+'</td>'+
+      '<td style="font-size:11px;color:#475467">'+esc(c.method)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.owner)+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  $('#p3').innerHTML = h;
+
+  /* --- p4 合同条款 --- */
+  $('#p4').innerHTML = '<div class="badge-n">可直接复制至《项目质量合同书》</div><pre class="doc">'+esc(buildContract())+'</pre>';
+}
+
+function buildContract(){
+  if(!RESULT) return '';
+  const {vocList, step1, ctqs} = RESULT;
+  const L = [];
+  L.push('第X章 客户特殊要求（CTQ）');
+  L.push('');
+  L.push('本章CTQ源自下列客户之声（VOC），经「复合拆分 → 要素因子分解 → 关键因子提取 → 量化定标」四步转化，');
+  L.push('共'+ctqs.length+'条，全部可测量、可复现、可独立验收。');
+  L.push('');
+  L.push('【VOC 来源清单】');
+  vocList.filter(v=>!v.compound || v.id===vocList.find(x=>x.org===v.org).id).forEach(v=>{
+    L.push('  '+v.id+'：'+v.text);
+  });
+  const groups = {};
+  ctqs.forEach(c=>{ (groups[c.abbr]=groups[c.abbr]||[]).push(c); });
+  const nameMap = {UX:'易用性类',PERF:'性能类',REL:'可靠性类',SAFE:'安全类',SVC:'服务类',COST:'成本类'};
+  let sec = 1;
+  Object.keys(groups).forEach(ab=>{
+    L.push('');
+    L.push('X.'+sec+' '+ (nameMap[ab]||ab+'类') +'CTQ');
+    L.push('');
+    groups[ab].forEach(c=>{
+      L.push(c.id+' '+c.desc);
+      L.push('  测量对象：'+c.object);
+      L.push('  关键因子条件：'+c.condition);
+      const t = String(c.target).split('/').map(s=>s.trim());
+      L.push('  目标值：挑战值 '+(t[0]||'-')+' / 达标值 '+(t[1]||'-')+' / 底线值 '+(t[2]||'-'));
+      L.push('  测量方法：'+c.method);
+      L.push('  责任部门：'+c.owner);
+      L.push('');
+    });
+    sec++;
+  });
+  L.push('【签署】');
+  L.push('  客户方（甲方）：____________________    日期：____________');
+  L.push('  供应方（乙方）：____________________    日期：____________');
+  L.push('  质量负责人：________________________    日期：____________');
+  return L.join('\n');
+}
+
+/* ============================================================
+   导出
+   ============================================================ */
+function dl(name, content, mime){
+  const blob = new Blob(['\ufeff'+content], {type:mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function buildMD(){
+  const {vocList, step1, step2, ctqs} = RESULT;
+  const L = [];
+  L.push('# VOC→CTQ 转化报告');
+  L.push('');
+  L.push('> 生成时间：'+new Date().toLocaleString('zh-CN')+'｜行业基准：'+CFG.industry+'｜量化强度：'+['宽松','标准','严格'][CFG.intensity]);
+  L.push('');
+  L.push('## 一、Step 0 复合拆分');
+  L.push('');
+  L.push('| 原编号 | 是否复合 | 拆分后编号 | 拆分后VOC | 拆分理由 | 需求类型 | 优先级 | 体验类 |');
+  L.push('|---|---|---|---|---|---|---|---|');
+  vocList.forEach(v=>L.push('| '+v.org+' | '+(v.compound?'是':'否')+' | '+v.id+' | '+v.text+' | '+(v.reason||'-')+' | '+v.type+' | '+v.prio+' | '+(v.exp?'是':'否')+' |'));
+  L.push('');
+  L.push('## 二、Step 1 要素分解');
+  step1.forEach(s=>{
+    L.push('');
+    L.push('### '+s.vocId);
+    if(s.chain && s.chain.length) L.push('**端到端链路：** '+s.chain.join(' → '));
+    const mk = s.mece||{};
+    if(Object.keys(mk).length){
+      L.push('');
+      L.push('**MECE 自检：** '+Object.keys(mk).map(k=>k+' '+mk[k]).join('｜'));
+    }
+    L.push('');
+    L.push('| 编号 | 要素名称 | 影响逻辑 | 追问问题 |');
+    L.push('|---|---|---|---|');
+    s.elements.forEach(e=>L.push('| '+e.id+' | '+e.name+' | '+e.logic+' | '+(e.questions||[]).join(' / ')+' |'));
+  });
+  L.push('');
+  L.push('## 三、Step 2 关键因子');
+  step2.forEach(g=>{
+    g.groups.forEach(gr=>{
+      L.push('');
+      L.push('**'+gr.elId+'：'+gr.elName+'**');
+      L.push('');
+      L.push('| 因子编号 | 因子名称 | 影响逻辑 | 典型取值范围 |');
+      L.push('|---|---|---|---|');
+      gr.factors.forEach(f=>L.push('| '+f.id+' | '+f.name+' | '+f.logic+' | '+f.range+' |'));
+    });
+  });
+  L.push('');
+  L.push('## 四、Step 4 CTQ 清单（共 '+ctqs.length+' 条）');
+  L.push('');
+  L.push('| CTQ编号 | 描述 | 测量对象 | 关键因子条件 | 目标值(挑战/达标/底线) | 测量方法 | 责任部门 |');
+  L.push('|---|---|---|---|---|---|---|');
+  ctqs.forEach(c=>L.push('| '+c.id+' | '+c.desc+' | '+c.object+' | '+c.condition+' | '+c.target+' | '+c.method+' | '+c.owner+' |'));
+  L.push('');
+  L.push('## 五、合同条款');
+  L.push('');
+  L.push('```');
+  L.push(buildContract());
+  L.push('```');
+  return L.join('\n');
+}
+function buildXLS(){
+  const rows = [['CTQ编号','CTQ描述','测量对象','关键因子条件','挑战值','达标值','底线值','测量方法','责任部门','来源VOC']];
+  RESULT.ctqs.forEach(c=>{
+    const t = String(c.target).split('/').map(s=>s.trim());
+    rows.push([c.id,c.desc,c.object,c.condition,t[0]||'',t[1]||'',t[2]||'',c.method,c.owner,c.vocId||'']);
+  });
+  let h = '<html><head><meta charset="utf-8"></head><body><table border="1">';
+  rows.forEach((r,i)=>{
+    h += '<tr>' + r.map(c=>'<t'+(i===0?'h':'d')+'>'+esc(c)+'</t'+(i===0?'h':'d')+'>').join('') + '</tr>';
+  });
+  h += '</table></body></html>';
+  return h;
+}
+function buildDOC(){
+  const {vocList, ctqs} = RESULT;
+  let h = '<html><head><meta charset="utf-8"><style>body{font-family:"Microsoft YaHei";font-size:10.5pt;line-height:1.7}h1{font-size:16pt}h2{font-size:13pt;margin-top:18pt}table{border-collapse:collapse;width:100%;font-size:9pt}th,td{border:1px solid #999;padding:4px 6pt;vertical-align:top}th{background:#f0f0f0}</style></head><body>';
+  h += '<h1>VOC→CTQ 转化报告</h1>';
+  h += '<p>生成时间：'+new Date().toLocaleString('zh-CN')+'</p>';
+  h += '<h2>一、VOC 拆分结果</h2><table><tr><th>原编号</th><th>是否复合</th><th>编号</th><th>内容</th><th>类型</th><th>优先级</th></tr>';
+  vocList.forEach(v=>{ h+='<tr><td>'+esc(v.org)+'</td><td>'+(v.compound?'是':'否')+'</td><td>'+esc(v.id)+'</td><td>'+esc(v.text)+'</td><td>'+esc(v.type)+'</td><td>'+esc(v.prio)+'</td></tr>'; });
+  h += '</table>';
+  h += '<h2>二、《项目质量合同书》CTQ 章节</h2><pre style="font-family:Consolas;font-size:9pt;white-space:pre-wrap">'+esc(buildContract())+'</pre>';
+  h += '</body></html>';
+  return h;
+}
+$$('[data-exp]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if(!RESULT){ toast('请先生成结果'); return; }
+    const t = b.dataset.exp;
+    const stamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    if(t==='md'){ dl('VOC-CTQ转化报告_'+stamp+'.md', buildMD(), 'text/markdown;charset=utf-8'); toast('Markdown 已导出'); }
+    if(t==='xls'){ dl('CTQ清单_'+stamp+'.xls', buildXLS(), 'application/vnd.ms-excel'); toast('Excel 已导出'); }
+    if(t==='doc'){ dl('VOC-CTQ转化报告_'+stamp+'.doc', buildDOC(), 'application/msword'); toast('Word 已导出'); }
+    if(t==='json'){ dl('VOC-CTQ数据_'+stamp+'.json', JSON.stringify(RESULT,null,2), 'application/json'); toast('JSON 已导出'); }
+  });
+});
+
+/* ============================================================
+   交互绑定
+   ============================================================ */
+$('#vocInput').addEventListener('input', e=>{ $('#charCnt').textContent = e.target.value.length + ' 字'; });
+$('#btnClear').addEventListener('click', ()=>{ $('#vocInput').value=''; $('#charCnt').textContent='0 字'; });
+$$('#modeSeg button').forEach(b=>b.addEventListener('click', ()=>{
+  $$('#modeSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); CFG.mode=b.dataset.mode;
+}));
+$('#cfgIndustry').addEventListener('change', e=>{ CFG.industry=e.target.value; });
+$('#cfgIntensity').addEventListener('input', e=>{
+  CFG.intensity = +e.target.value;
+  $('#intenTxt').textContent = ['宽松','标准','严格'][CFG.intensity];
+});
+$('#swMece').addEventListener('click', function(){ this.classList.toggle('on'); CFG.mece=this.classList.contains('on'); });
+$('#swLlm').addEventListener('click', function(){
+  this.classList.toggle('on'); CFG.llm=this.classList.contains('on');
+  $('#llmBox').style.display = CFG.llm?'block':'none';
+  $('#engineTag').textContent = CFG.llm?'LLM 增强':'规则引擎';
+});
+['base','model','key'].forEach(id=>{
+  const el = $('#cfg'+id.charAt(0).toUpperCase()+id.slice(1));
+  el.addEventListener('input', ()=>{ CFG[id]=el.value.trim(); });
+});
+$$('.navchip').forEach(b=>b.addEventListener('click', ()=>{
+  const el = document.getElementById(b.dataset.go);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}));
+$$('.tab').forEach(b=>b.addEventListener('click', ()=>{
+  $$('.tab').forEach(x=>x.classList.remove('on'));
+  $$('.pane').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.dataset.p).classList.add('on');
+}));
+$('#btnRun').addEventListener('click', run);
+$('#btnSample').addEventListener('click', ()=>{
+  $('#vocInput').value = '我需要一个三折叠手机，展开后自动打开windows11系统可以作为便携式办公电脑，折叠后自动切换为鸿蒙系统，整体厚度不能超过10mm，折叠后尺寸不大于7英寸方便握持，展开后不小于8英寸，电池容量不低于10000mAh，折叠状态下日常续航不低于24h，展开状态下连续工作时间不低于18h，整个使用过程与手接触的部位温度不超过40℃，芯片性能不低于高通第六代旗舰芯片';
+  $('#charCnt').textContent = $('#vocInput').value.length + ' 字';
+});
+</script>
 </body>
 </html>
