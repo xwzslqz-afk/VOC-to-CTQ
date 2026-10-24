@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库语义检索</title>
+<meta name="description" content="上传文档建立知识库，用自然语言语义检索条目">
+<link rel="stylesheet" href="style.css?v=20261024d">
+</head>
+<body>
+
+<div id="boot">
+  <div class="spinner"></div>
+  <div class="boot-text">正在初始化…</div>
+</div>
+
+<!-- 登录 -->
+<div id="login" class="hidden">
+  <div class="login-card">
+    <div class="login-mark">KB</div>
+    <h1>知识库语义检索</h1>
+    <p class="login-sub">上传文档建立自己的知识库，用自然语言找相关条目</p>
+
+    <div class="field">
+      <label for="email">邮箱</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
+    </div>
+    <button class="btn btn-primary btn-block" id="btnSend" type="button">发送验证码</button>
+
+    <div class="field hidden" id="codeField" style="margin-top:14px">
+      <label for="code">验证码</label>
+      <div class="code-row">
+        <input id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="邮箱收到的验证码" maxlength="8">
+        <button class="btn btn-primary" id="btnVerify" type="button">登录</button>
+      </div>
+    </div>
+
+    <div class="msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="main" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">KB</div>
+      <span>知识库语义检索</span>
+      <span class="brand-sub">语义解析 · 多路召回 · 精排</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="pill" id="modelPill" title="语义模型状态">
+      <span class="dot" id="modelDot"></span><span id="modelText">模型未加载</span>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="avatar">·</div>
+      <span id="userName">-</span>
+      <button class="btn btn-ghost btn-sm" id="btnLogout" type="button">退出</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="side-head">
+        <span class="side-title">文档库</span>
+        <span class="side-count" id="docCount">0 篇</span>
+      </div>
+
+      <div class="uploader">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-title">拖入文件，或点击选择</div>
+          <div class="dropzone-hint">
+            PDF · Word · Excel · PPT · TXT · MD · CSV<br>
+            上传后自动切片并向量化入库
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple class="hidden"
+               accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.pptx,.txt,.md,.markdown,.json,.html,.htm,.log,.xml,.yaml,.yml">
+      </div>
+
+      <div class="joblist" id="jobList"></div>
+
+      <div class="doclist" id="docList">
+        <div class="empty-hint">还没有文档<br>上传第一篇即建立索引</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="search-box">
+        <input id="query" type="search" placeholder="用一句话描述你要找的内容，例如：继电器粘连的失效分析结论" autocomplete="off">
+        <button class="mode-pill on" id="btnDeep" type="button">深度语义</button>
+        <button class="btn btn-primary" id="btnSearch" type="button">检索</button>
+      </div>
+
+      <div class="sem-panel hidden" id="semPanel"></div>
+
+      <div class="search-meta">
+        <div class="search-hint" id="searchHint">输入问题，返回语义最接近的原文片段</div>
+        <div class="search-hint" id="searchStat"></div>
+      </div>
+
+      <div class="results" id="results">
+        <div class="rnone">
+          语义检索会把你的问题拆成多条不同说法，<br>
+          分别转成向量在全部文档片段中匹配，再由模型判断哪些真正回答了问题 —— 不必和原文用同一个词。
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// 兜底：若 10 秒后仍停在启动屏，说明资源没载入，给出可读提示而不是白屏
+setTimeout(function () {
+  var b = document.getElementById('boot')
+  if (b && !b.classList.contains('hidden')) {
+    b.innerHTML = '<div style="text-align:center;max-width:340px;padding:0 24px;line-height:1.9">'
+      + '<div style="font-weight:600;margin-bottom:8px">页面资源未能载入</div>'
+      + '<div style="font-size:13px;color:#8a91a0">请确认是从带分享码的链接打开，或清空缓存后刷新重试。</div>'
+      + '</div>'
+  }
+}, 10000)
+</script>
+
+<script src="vendor/workbuddy-cloud-sdk.js?v=20261024d"></script>
+<script type="module" src="app.js?v=20261024d"></script>
+</body>
+</html>
